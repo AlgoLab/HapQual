@@ -1,5 +1,13 @@
 #!/bin/bash
 #
+# Copyright (C) 2018 Murray Patterson
+#
+# Distributed under the MIT license.
+#
+# You should have received a copy of the MIT license along with this program.
+#
+#----------------------------------------------------------------------
+#
 # setup and configure WhatsHap
 #
 base="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd )"

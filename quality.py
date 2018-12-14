@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 # coding: utf-8
+"""
+Copyright (C) 2018 Simone Ciccolella
+
+Distributed under the MIT license.
+
+You should have received a copy of the MIT license along with this program.
+"""
 
 # Ignore seaborn future warnings
 import warnings
