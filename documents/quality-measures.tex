@@ -1,0 +1,235 @@
+\documentclass{article}
+\usepackage{amsmath}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\betadist}{Beta}
+
+\usepackage{textcomp}\usepackage{xcolor}
+\newcommand{\notaestesa}[2]{%
+  \marginpar{\color{red!75!black}\textbf{\texttimes}}%
+  {\color{red!75!black}%
+    [\,\textbullet\,\textsf{\textbf{#1:}}%
+    \textsf{\footnotesize#2}\,\textbullet\,]}%
+}
+\newcommand{\SC}[1]{\notaestesa{SC}{#1}}
+
+\newcommand{\ie}{\textit{i.e.}}
+\newcommand{\eg}{\textit{e.g.}}
+
+\begin{document}
+
+% genotype quality
+%----------------------------------------------------------------------
+\section{Genotype quality model}
+
+We can model the genotype as the tossing of a coin.  In particular a
+read could be either correct or incorrect, in the sense that a read
+could either respect the genotype or it could be an error | where such
+error would happen with probability $\epsilon$ | the technology error,
+\eg, 15\% in the case of PacBio.  Hence, the model would represent a
+coin toss where the coin is not fair, in particular we would have a
+$(1-\epsilon)$ probability of obtaining a head (\ie, a correct read
+according to the given genotype) and an $\epsilon$ chance of obtaining
+a tail (\ie, an error in the read).
+    
+Now we consider a set of observations $D$ representing the reads
+associated with a given genomic locus and denote as $\theta$ the
+probability of obtaining a correct genotype (tossing an head in our
+metaphor).  We want to obtain a $\theta$ that maximizes our
+observations, thus we want the \emph{Maximum a posteriori} (MAP) value
+for $\theta$:
+
+\begin{equation}
+  \begin{split}
+    \theta_{MAP} &= \argmax_\theta P(\theta | D) \\
+    &= \argmax_\theta P(D|\theta)P(\theta)
+  \end{split}
+\end{equation}
+
+\noindent where the second equation is an expansion using Bayes's
+theorem, and $P(D) = 1$, since we have the data.
+
+Considering each term, we know that $P(D|\theta)$ is the likelihood
+that the outcome is distributed according to a Bernoulli model:
+$\theta^{\alpha_{C}} (1-\theta)^{\alpha_{E}}$, that is the probability
+of obtaining $\alpha_{C}$ correct reads according to the genotype and
+$\alpha_{E}$ errors in the reads.  Maximizing this value alone would
+give us the \emph{Maximum likelihood estimation} (MLE), which is,
+however, very dependent on the observations | indeed it would be
+extremely unreliable in cases where the number of reads is low.  For
+example, recalling our coin tossing scenario, if we saw $n$ heads and
+no tail according to the MLE we would expect a tail in the $n+1$-st
+toss with probability 0, even though this is clearly not the case.
+
+Consider now the factor $P(\theta)$ which is the prior probability of
+$\theta$, distributed according to a \textit{Beta} distribution, in
+detail:
+\begin{equation*}
+  P(\theta) = \dfrac{\theta^{\beta_{C}-1} (1 - \theta)^{\beta_{E}-1}}
+  {B(\beta_{C},\beta_{E})}
+\end{equation*}
+where $\beta_{C}$ and $\beta_{E}$ are respectively the number of
+correct genotypes and errors according to a prior expectation and
+$B(\beta_{C},\beta_{E})$ is the binomial distribution | therefore
+$P(\theta)$ is distributed as a Beta distribution:
+$P(\theta) \sim \betadist(\beta_{C},\beta_{E})$.
+
+Since the conjugate prior of a binomial is a Beta distribution and
+with some algebraic interpolation, whose details I will leave out
+here, we have that
+$P(\theta | D) \sim \betadist(\beta_{C} + \alpha_{C},\beta_{E} +
+\alpha_{E})$ where $\alpha$ according to the number of observations
+and the $\beta$ is according to the number expected given a prior.
+In particular the mode of the MAP distribution is then:
+\begin{equation}
+  \theta_{MAP} = \dfrac{\beta_{C} + \alpha_{C} - 1}
+  {\beta_{C} + \alpha_{C} + \beta_{E} + \alpha_{E} - 2}
+  \label{eq:MAP}
+\end{equation}
+
+\subsection{Genotype quality measure}
+Once we have acquired $\theta_{MAP}$ we have some option to compute
+the quality of the genotype.  To obtain a quality of the genotype we
+use a Z-test to measure the fitness of the sample according to our
+null hypothesis.  The Z-test is used to evaluate a distribution that
+can be approximated by a normal distribution.
+
+We consider the null hypothesis $H_0$ as the hypothesis that the reads
+come from a binomial distribution with probability $(1-\epsilon)$ of
+being correct and $\epsilon$ of being errors.  We assume that this
+probability is not fixed and can be modeled as a normal distribution
+centered in $(1-\epsilon)$ with standard deviation $\sigma$, thus
+$H_0 \sim \mathcal{N}(1-\epsilon, \sigma)$.  The meaning of this
+approximation is that in a perfect world we should have exactly
+$(1-\epsilon)$ probability of getting a correct read, but since the
+world is not perfect this probability is not fixed and there is a
+deviation of the error rate in different loci; while maintaining an
+$\epsilon$ rate over all the genome.
+
+We can then consider our sample at a given locus, with a probability
+of having a correct read equal to $\theta_{MAP}$.  The z-score will be
+calculated as follows, where $n$ is the coverage at the locus:
+\begin{equation*}
+  \mbox{z-score} = \dfrac{1-\epsilon - \theta_{MAP}}{\sigma / \sqrt{n}}
+\end{equation*}
+        
+The quality measure would then be the corresponding p-value of the
+z-score of the fitting of the observations to $H_0$.  In particular
+this would mean that values that have a large amount of errors would
+have a low quality, while loci with a smaller amount of errors than
+expected would not be heavily penalized since this low expectation
+would be mitigated by the prior probability.  Such p-value is denoted
+as $G_{l_1}$ in the following.
+
+\paragraph{Obtaining distribution values for the hypothesis}
+
+To complete the definition we would need to obtain the values of the
+standard deviation for $H_0$ and $H_1$.  Considering $H_0$ first we
+can compute the standard deviation $\sigma_i$ of the Binomial
+distribution for each locus $i$ by exploring the whole genome.  The
+standard deviation would be calculated as
+$\sigma_i = \sqrt{n_i (1-\epsilon) \epsilon}$ where $n_i$ is the
+coverage at locus $i$; the standard deviation $\sigma$ of $H_0$ would
+then be the mode or average of all the $\sigma_i$.  A similar
+principle can be applied to obtain $\hat{\sigma}$ for each hypothesis
+$H_1$ computed at each locus.
+
+It is clear that $\sigma_i$ does not depend on the genotype but only
+on the coverage, for this reason it is possible to compute it much
+faster using a simulation, in fact we can generate $M$ samples, with
+coverage $n_i \sim \mathcal{N}(\mu_c, \sigma_c)$, meaning that the
+coverage of a simulation is drawn from a normal distribution with
+standard deviation $\sigma_c$ and with mean equal to the average
+coverage $\mu_c$ of the technology used.  In this way, it is not
+necessary to scan the entire genome to obtain the coverage of every
+locus, but they can be estimated using a prior assumption on the
+technology used.
+
+\paragraph{Obtaining prior values for the genotypes}
+
+The most sensitive part would be to define the prior values for the
+genotypes, \ie, values of $\beta_C$ and $\beta_E$ of
+equation~\ref{eq:MAP}, since low values could be too heavily weighted
+by the observations and, conversely, high values could overweigh the
+observations.  One way to overcome this issue is to simulate a drawing
+from $H_0$ of a total of $m$ samples, where $m$ is a user-defined
+parameter.  According to this method $\beta_C$ and $\beta_E$ would be
+the number of correct and errors, respectively, obtained in the
+simulation over the total of $m$ samples from $H_0$.
+
+% phasing quaility
+%----------------------------------------------------------------------
+\section{Phasing quality}
+
+We consider two genomic loci $l_1$ and $l_2$ and their proposed
+phasing $Q_{l_1,l_2}$; let $n$ be the number of reads that bridge the
+two loci and $k$ the number of reads that support the phasing.  We
+denote as $O$ the observations, \ie, the $n$ reads bridging $l_1$ and
+$l_2$.  If we assume that $Q_{l_1,l_2}$ is correct that would mean
+that the $k$ reads supporting the phasing are correct and the $(n-k)$
+that oppose the phasing contain an error at $l_1$ or $l_2$ or both.
+
+To obtain the probability that there is no error in the $k$ reads we
+can start by calculating the probability that a read contains an error
+in $l_1$ or $l_2$ or both as follows:
+
+\begin{equation*}
+  \begin{split}
+    P(\mbox{error in read}) &= P(\mbox{error in }l_1  \vee \mbox{error in }l_2) \\
+    &= P(\mbox{error in }l_1) + P(\mbox{error in }l_2) - P(\mbox{error in }l_1  \wedge \mbox{error in }l_2)\\
+    &= \epsilon + \epsilon - \epsilon^2 = \epsilon(2-\epsilon)
+  \end{split}
+\end{equation*}
+
+If we consider the whole set of reads that bridge both $l_1$ and
+$l_2$, then the probability that there is no error in the $k$ reads
+will be equal to $(1 - \epsilon(2-\epsilon))^k$.  To compute the
+probability that there is an error in the other $n-k$ reads it will
+simply be $(\epsilon(2-\epsilon))^{n-k}$, therefore:
+
+\begin{equation}
+  P(Q_{l_1,l_2}|O) = (1 - \epsilon(2-\epsilon))^k 
+  (\epsilon(2-\epsilon))^{n-k}
+  \label{eq:phasing-epsilon}
+\end{equation}
+
+It is possible to sophisticate the model by using the values computed
+for the MAPs --- in fact we denote as $\theta_{MAP}(l_i)$ the MAP
+computed for locus $i$ thus we can rewrite
+equation~\ref{eq:phasing-epsilon}:
+
+\begin{equation}
+  P(Q_{l_1,l_2}|O) = (\theta_{MAP}(l_1)\theta_{MAP}(l_2))^k
+  (1- \theta_{MAP}(l_1)\theta_{MAP}(l_2))^{n-k}
+\end{equation}
+
+% haplotyping quality
+%----------------------------------------------------------------------
+\section{Haplotyping quality}
+
+To obtain the quality of the entire haplotyping we can combine the two
+previous probabilities.  In particular we use the genotype
+probabilities to weigh the phasing probabilities.  In detail it is the
+probability of the genotype of $l_1$ and the probability of the
+genotype of $l_2$ that function as weight for the probability of the
+phasing, informally:
+
+\begin{equation*}
+  \begin{split}
+    &\prod_{\forall l_1, l_2} P(\mbox{genotype } l_1 \wedge \mbox{ genotype } l_2) 
+    P(\mbox{phasing of } l_1, l_2) = \\
+    &\prod_{\forall l_1, l_2} P(\mbox{genotype } l_1) P(\mbox{ genotype } l_2) 
+    P(\mbox{phasing of } l_1, l_2)
+  \end{split}
+\end{equation*}
+
+Which will formally be equal to:
+
+\begin{equation}
+  \prod_{\forall l_1, l_2} G_{l_1} G_{l_2} P(Q_{l_1,l_2}|O)
+\end{equation}
+
+\end{document}
+  
+%  LocalWords:  Genotype genotype posteriori MLE genotypes MAPs
+%  LocalWords:  overweigh

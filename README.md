@@ -5,10 +5,11 @@ Here, we propose a way to asses the quality of the phasing of a set of
 _single nucleotide variants_ (SNVs), as phased using a reads-based
 phaser (or any method) with respect to a set of sequencing reads,
 _e.g._, those reads which were used to obtain the phasing.  This is
-described in a document in `documents` directory of this repository,
-which we will hereby refer to as the _document_.  The codes in this
-directory compute these measures according to this _document_.  The
-best way to illustrate these codes is with the following full example
+described in a document `documents/quality-measures` (make it with
+`latexmk -pdf ..` of this repository, which we will hereby refer to as
+the _document_.  The codes in this directory compute these measures
+according to this _document_.  The best way to illustrate these codes
+is with the following full example
 
 
 # Usage --- via an example
