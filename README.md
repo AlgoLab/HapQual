@@ -6,10 +6,14 @@ _single nucleotide variants_ (SNVs), as phased using a reads-based
 phaser (or any method) with respect to a set of sequencing reads,
 _e.g._, those reads which were used to obtain the phasing.  This is
 described in a document `documents/quality-measures` (make it with
-`latexmk -pdf ..` of this repository, which we will hereby refer to as
+`latexmk -pdf`) of this repository, which we will hereby refer to as
 the _document_.  The codes in this directory compute these measures
 according to this _document_.  The best way to illustrate these codes
 is with the following full example
+
+Note that a [Snakemake](https://snakemake.readthedocs.io/) workflow is
+specified in `Snakefile`, for performing automatically all of the
+steps below, which can be called with `snakemake -p`
 
 
 # Usage --- via an example
