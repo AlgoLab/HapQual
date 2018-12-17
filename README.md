@@ -15,6 +15,10 @@ Note that a [Snakemake](https://snakemake.readthedocs.io/) workflow is
 specified in `Snakefile`, for performing automatically all of the
 steps below, which can be called with `snakemake -p`
 
+Whether one follows the example below, or runs the Snakemake workflow,
+the results will be as described in the
+[Results](#results-----how-to-interpret-the-results) section.
+
 
 # Usage --- via an example
 
@@ -96,8 +100,15 @@ from our compiled data in `compiled/chr1_.p`, which is PacBio data, so
 we assume a prior `--epsilon` (error rate) of `0.15` (15% error rate).
 The average coverage of this dataset is ~40, hence the `--techcov 40`.
 All other parameters (used to compute the various priors, see the
-_document_) have the default values.  The results will appear (as
-plots) in the `measures` directory:
+_document_) have the default values.  We describe the results in the
+next section.
+
+
+# Results --- how to interpret the results
+
+Whether one has followed the steps of the above example, or simply ran
+the workflow in the `Snakefile`, the results will appear (as plots) in
+the `measures` directory:
 
     chr1__genotype_plot.pdf
 
