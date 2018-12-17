@@ -1,6 +1,6 @@
 '''
 
-Perform the steps of the example specified in REAME.md.  Re-run this
+Perform the steps of the example specified in README.md.  Re-run this
 workflow simply with:
 
    snakemake -p
@@ -11,7 +11,7 @@ note: requires basic unix tools such as: sed, awk, zcat, wget, git,
 python tools such as: python3, virtualenv,
 and: samtools
 
-	'''
+'''
 
 import pysam
 
